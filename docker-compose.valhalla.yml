@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  valhalla:
+    image: valhalla/valhalla:latest
+    container_name: eta-tracker-valhalla
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./valhalla_data:/custom_files
+    environment:
+      - tile_urls=https://download.geofabrik.de/north-america/us/texas-latest.osm.pbf
+    command: |
+      sh -c "
+      if [ ! -f /custom_files/valhalla_tiles.tar ]; then
+        echo 'Building Valhalla tiles for Texas... (this will take 10-15 minutes on first run)'
+        valhalla_build_config --mjolnir-tile-dir /custom_files/valhalla_tiles --mjolnir-timezone /custom_files/valhalla_tiles/timezones.sqlite > /custom_files/valhalla.json
+        valhalla_build_tiles -c /custom_files/valhalla.json https://download.geofabrik.de/north-america/us/texas-latest.osm.pbf
+        echo 'Valhalla tiles built successfully!'
+      else
+        echo 'Using existing Valhalla tiles'
+      fi
+      valhalla_service /custom_files/valhalla.json 1
+      "
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - eta-tracker-network
+
+networks:
+  eta-tracker-network:
+    driver: bridge

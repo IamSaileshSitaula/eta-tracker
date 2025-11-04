@@ -41,7 +41,12 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 # Global state
 db = Database()
-router = get_router()
+
+# Initialize router with Valhalla URL if available
+valhalla_url = os.getenv('VALHALLA_URL', None)
+osrm_url = os.getenv('OSRM_URL', 'https://router.project-osrm.org')
+router = get_router(valhalla_url=valhalla_url, osrm_url=osrm_url)
+
 weather_api = get_weather_api()
 traffic_api = get_traffic_api()
 active_simulations = {}  # shipment_id -> simulation_thread
@@ -909,7 +914,17 @@ if __name__ == '__main__':
     print("=" * 60)
     print("\nStarting server...")
     print(f"Database: Connected to PostgreSQL")
-    print(f"API Endpoints:")
+    
+    # Show routing engine status
+    if router.valhalla_url:
+        print(f"Routing: Valhalla (Truck costing enabled)")
+        print(f"  URL: {router.valhalla_url}")
+    else:
+        print(f"Routing: OSRM (Fallback - limited truck support)")
+        print(f"  URL: {router.osrm_url}")
+        print(f"  Note: For full truck routing, run start_valhalla.bat")
+    
+    print(f"\nAPI Endpoints:")
     print(f"  GET/POST /v1/shipments")
     print(f"  POST   /v1/positions")
     print(f"  GET    /v1/shipments/<id>/status")

@@ -94,7 +94,7 @@ Built for customers to monitor deliveries with precision and understand the conf
 - 📊 **ETA Confidence Scoring** - Real-time confidence levels (high/medium/low) updated every 30 seconds
 - 🗺️ **Valhalla Routing Engine** - Professional-grade routing with traffic integration
 - 🌐 **Live Data Fusion** - Weather, traffic, and congestion data for adaptive ETAs
-- 🏢 **B2B Focus** - Commercial delivery optimization (retail, healthcare, industrial)
+- 🏢 **B2B Focus** - Commercial delivery optimization (retail, healthcare, industrial, hopspitillity)
 
 ## 📦 Installation
 
@@ -104,6 +104,7 @@ Ensure you have the following installed:
 - **Node.js** 16+ and npm
 - **Python** 3.8+
 - **PostgreSQL** 12+
+- **Docker Desktop** (for Valhalla routing engine)
 - **Git**
 
 ### Quick Start
@@ -143,19 +144,53 @@ Ensure you have the following installed:
    python data/db.py
    ```
 
-6. **Start the backend server:**
+6. **Set up Valhalla Routing Engine (Optional but Recommended):**
+   
+   Valhalla provides professional truck routing with height/weight constraints. Without it, the system falls back to OSRM (limited features).
+   
+   **First-time setup (takes 15-20 minutes):**
+   ```bash
+   # Windows
+   start_valhalla.bat
+   
+   # Linux/Mac
+   docker-compose -f docker-compose.valhalla.yml up -d
+   ```
+   
+   This will:
+   - Download Valhalla Docker image
+   - Download Texas OSM road data (~150 MB)
+   - Build routing tiles (one-time, 10-15 minutes)
+   - Start Valhalla server on port 8002
+   
+   **Update your `.env` file:**
+   ```bash
+   VALHALLA_URL=http://localhost:8002
+   ```
+   
+   **Subsequent starts (takes seconds):**
+   ```bash
+   docker start eta-tracker-valhalla
+   ```
+   
+   **Verify Valhalla is working:**
+   ```bash
+   curl http://localhost:8002/status
+   ```
+
+7. **Start the backend server:**
    ```bash
    python backend/app.py
    # Or use the batch file on Windows:
    start_backend.bat
    ```
 
-7. **Start the frontend dev server:**
+8. **Start the frontend dev server:**
    ```bash
    npm run dev
    ```
 
-8. **Open your browser:**
+9. **Open your browser:**
    ```
    http://localhost:5173
    ```
