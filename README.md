@@ -1,6 +1,14 @@
 # 🚚 ETA Tracker
 
-A full-stack real-time shipment tracking system with unlimited stops, intelligent route planning, and live GPS tracking. Built for logistics managers and customers to monitor deliveries with precision.
+A full-stack, real-time shipment tracking system that supports unlimited stops, intelligent route planning, and live GPS tracking.
+
+Built for customers to monitor deliveries with precision and understand the confidence level of each ETA, and for logistics managers to manage operations through:
+
+- **Live ETA and confidence analytics**
+- **Rerouting control interface**
+- **Route and historical performance visualization** powered by the Valhalla API
+- **GPS-based driver tracking** with multi-stop management
+- **Integration of live weather, traffic, and congestion data** for smarter and adaptive ETA recalibration
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue)
@@ -25,13 +33,18 @@ A full-stack real-time shipment tracking system with unlimited stops, intelligen
 - 🔄 **Real-time Geocoding** - OpenStreetMap Nominatim API with caching
 - 📊 **Route Overview** - Live ETA calculations with traffic considerations
 - 🎯 **One-Click Deployment** - Generate tracking numbers and push to customer view
+- 🔀 **Rerouting Control Interface** - Manual reroute triggers and optimization controls
+- 📍 **GPS-Based Driver Tracking** - Multi-stop management with real-time position updates (30-second intervals)
+- 🌐 **Live Data Integration** - Weather, traffic, and congestion data for adaptive ETA recalibration
+- 📊 **ETA Confidence Analytics** - Understand confidence level of each ETA provided every 30 seconds
 
 ### Customer Tracking View
-- 📡 **Live GPS Tracking** - Real-time vehicle position updates via Socket.io
-- ⏱️ **Dynamic ETAs** - EWMA-based arrival time predictions
+- 📡 **Live GPS Tracking** - Real-time vehicle position updates via Socket.io (30-second intervals)
+- ⏱️ **Dynamic ETAs** - EWMA-based arrival time predictions with confidence levels
 - 🚦 **Traffic Awareness** - Visual traffic congestion indicators
 - 🌦️ **Weather Advisories** - Delay notifications with severity levels
 - 📱 **Responsive Design** - Works on desktop, tablet, and mobile
+- 📈 **ETA Confidence Display** - Real-time confidence scoring for each delivery estimate
 
 ## 🏗️ Architecture
 
@@ -67,11 +80,21 @@ A full-stack real-time shipment tracking system with unlimited stops, intelligen
 - Weather API integration
 - GTFS support for transit mode
 
-**Real-time Updates:**
-- Socket.io bidirectional communication
-- GPS position broadcasting
-- Live ETA recalculation
+**Real-time Updates & Intelligence:**
+- Socket.io bidirectional communication (30-second GPS intervals)
+- GPS position broadcasting with confidence scoring
+- Live ETA recalibration with EWMA-based predictions
 - Traffic and weather event notifications
+- Valhalla API integration for optimal route calculations
+- Adaptive rerouting based on live conditions
+
+**Key Technical Features:**
+- 📡 **30-Second GPS Intervals** - Industry-standard tracking frequency (83% reduction in database load)
+- 🇺🇸 **MPH Speed Limits** - Zone-based speeds (20-60 mph) for realistic simulation
+- 📊 **ETA Confidence Scoring** - Real-time confidence levels (high/medium/low) updated every 30 seconds
+- 🗺️ **Valhalla Routing Engine** - Professional-grade routing with traffic integration
+- 🌐 **Live Data Fusion** - Weather, traffic, and congestion data for adaptive ETAs
+- 🏢 **B2B Focus** - Commercial delivery optimization (retail, healthcare, industrial)
 
 ## 📦 Installation
 
@@ -142,29 +165,35 @@ Ensure you have the following installed:
 **Comprehensive Test Data** (Recommended for development):
 
 ```bash
-# Populate database with 4 complete delivery routes in Beaumont, TX
+# Populate database with B2B commercial delivery routes in Beaumont, TX
 populate_test_data.bat   # Windows
 python create_test_data.py   # Linux/Mac
 
 # Creates:
-# - 2 Organizations (FastTrack Logistics, QuickShip Express)
-# - 5 Vehicles (3 trucks, 2 vans)
-# - 4 Shipment routes with 20+ stops across Beaumont
-# - Initial GPS positions at distribution center
+# - 2 Logistics Organizations (ETA Logistics, FastTrack Delivery)
+# - 5 Commercial Vehicles (3 trucks, 2 vans)
+# - 3 B2B Shipment routes with 19 commercial stops
+# - Speed limits and location types for realistic simulation
+# - Initial GPS positions at Beaumont Distribution Center
 ```
 
-**Last-Mile Delivery Simulator** (Urban deliveries with traffic):
+**Last-Mile Delivery Simulator** (B2B commercial deliveries with realistic traffic):
 
 ```bash
-# Simulate realistic last-mile delivery with traffic, delays, service time
-start_last_mile_simulator.bat ROUTE-DW-001 1   # Windows
-python simulate_last_mile.py --route ROUTE-DW-001 --vehicle 1   # Linux/Mac
+# Simulate realistic B2B last-mile delivery with MPH speeds, 30-second GPS intervals
+start_last_mile_simulator.bat ROUTE-RETAIL-001 1   # Windows
+python simulate_last_mile.py --route ROUTE-RETAIL-001 --vehicle 1   # Linux/Mac
 
-# Available test routes:
-# ROUTE-DW-001   : Downtown + West End Express (5 stops, ~45 min)
-# ROUTE-RES-001  : Residential Delivery Route (8 stops, ~2 hours)
-# ROUTE-NS-001   : North-South Corridor (6 stops, ~1.5 hours)
-# ROUTE-FULL-001 : Full City Coverage (10 stops, ~3 hours)
+# Available B2B test routes:
+# ROUTE-RETAIL-001  : Retail Express (5 stops: Walmart, Target, Home Depot, etc.)
+# ROUTE-HEALTH-001  : Healthcare & Education (6 stops: Hospitals, Universities)
+# ROUTE-IND-001     : Industrial & Logistics (7 stops: Port, Warehouses, Refineries)
+
+# Features:
+# - 30-second GPS intervals (industry standard)
+# - MPH speed limits (20-60 mph by zone)
+# - Realistic B2B service times (8-30 minutes)
+# - Valhalla API routing (no artificial delays)
 ```
 
 **Highway GPS Simulator** (Long-haul testing):
@@ -205,16 +234,36 @@ python simulate_gps.py   # Or: start_gps_simulator.bat
    - Click "Copy Tracking #" button
    - Share with customers
 
-### Customer Tracking
+6. **At present, the system uses synthetic GPS data to simulate live tracking. However, it is designed with an optional integration feature that allows connection to a real GPS feed—for example, by linking a driver’s phone live location to capture and update coordinates in real time.** 
+ - Option to add gps data(optional)
+ - for now just fetch simulated data.
 
-1. Navigate to "Customer Tracking" page
-2. Enter tracking number (format: `PO-XXXXXX`)
-3. View real-time:
+8. View real-time:
    - Vehicle GPS position on map
    - Stop sequence with ETAs
    - Route progress
    - Traffic conditions
    - Weather advisories
+   - confidence interval
+
+9. Reroute based on suggestion of Valhalla engine 
+   - Suggest Route rerouting to logistics manager
+   - Feature to suggest rerouting to logistics manager
+   - and also logistics manager can reroute if eta confidence to reduce eta is high enough for logistics manager to do so
+
+10- once logistics manager reroute it should also be automatically be displayed on costumer tracking 
+
+### Customer Tracking
+
+1. Navigate to "Customer Tracking" page
+2. Enter tracking number (format: `PO-XXXXXX`)
+3. View real-time updates (every 30 seconds):
+   - Vehicle GPS position on map
+   - Stop sequence with ETAs and confidence levels
+   - Route progress with completion percentage
+   - Live traffic conditions and congestion
+   - Weather advisories and delay predictions
+   - ETA confidence intervals (high/medium/low)
 
 ## 🔧 Configuration
 
