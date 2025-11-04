@@ -10,6 +10,8 @@ A full-stack real-time shipment tracking system with unlimited stops, intelligen
 ## 📚 Documentation
 
 - **[README.md](README.md)** - Complete project documentation (you are here)
+- **[QUICKSTART.md](QUICKSTART.md)** - 🚀 Get started in 5 minutes with test data
+- **[TESTING.md](TESTING.md)** - 🧪 Comprehensive testing guide with scenarios
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - How to contribute to this project
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history and release notes
 - **[LICENSE](LICENSE)** - MIT License terms
@@ -135,15 +137,44 @@ Ensure you have the following installed:
    http://localhost:5173
    ```
 
-### GPS Simulator (Optional)
+### Test Data & GPS Simulators
 
-To test real-time tracking without actual GPS hardware:
+**Comprehensive Test Data** (Recommended for development):
 
 ```bash
-python simulate_gps.py
-# Or use the batch file on Windows:
-start_gps_simulator.bat
+# Populate database with 4 complete delivery routes in Beaumont, TX
+populate_test_data.bat   # Windows
+python create_test_data.py   # Linux/Mac
+
+# Creates:
+# - 2 Organizations (FastTrack Logistics, QuickShip Express)
+# - 5 Vehicles (3 trucks, 2 vans)
+# - 4 Shipment routes with 20+ stops across Beaumont
+# - Initial GPS positions at distribution center
 ```
+
+**Last-Mile Delivery Simulator** (Urban deliveries with traffic):
+
+```bash
+# Simulate realistic last-mile delivery with traffic, delays, service time
+start_last_mile_simulator.bat ROUTE-DW-001 1   # Windows
+python simulate_last_mile.py --route ROUTE-DW-001 --vehicle 1   # Linux/Mac
+
+# Available test routes:
+# ROUTE-DW-001   : Downtown + West End Express (5 stops, ~45 min)
+# ROUTE-RES-001  : Residential Delivery Route (8 stops, ~2 hours)
+# ROUTE-NS-001   : North-South Corridor (6 stops, ~1.5 hours)
+# ROUTE-FULL-001 : Full City Coverage (10 stops, ~3 hours)
+```
+
+**Highway GPS Simulator** (Long-haul testing):
+
+```bash
+# Simulate Dallas to Beaumont highway route
+python simulate_gps.py   # Or: start_gps_simulator.bat
+```
+
+**📚 See [QUICKSTART.md](QUICKSTART.md) for complete setup guide and [TESTING.md](TESTING.md) for testing scenarios**
 
 ## 🎯 Usage
 
