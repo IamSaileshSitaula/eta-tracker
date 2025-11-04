@@ -5,6 +5,49 @@ All notable changes to the ETA Tracker project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-11-04 - B2B Realism Update
+
+### Added
+- 🏢 **B2B Focus**: 19 commercial delivery locations (retail, healthcare, industrial)
+- 📡 **30-Second GPS Intervals**: Industry-standard tracking frequency (was 5 seconds)
+- 🇺🇸 **MPH Speed Limits**: Zone-based speeds (20-60 mph) for Beaumont, TX
+- 🗺️ **3 B2B Routes**: ROUTE-RETAIL-001, ROUTE-HEALTH-001, ROUTE-IND-001
+- ⏱️ **Realistic Service Times**: 8-30 minutes based on location type
+- 📚 **7 New Documentation Files**: Comprehensive guides (2,400+ lines)
+  - QUICKSTART.md - 5-minute setup guide
+  - TESTING.md - Testing scenarios and validation
+  - B2B_UPDATE_SUMMARY.md - Complete changelog
+  - B2B_QUICK_START.md - Command reference
+  - QUICK_REFERENCE.md - One-page guide
+  - TEST_DATA_SUMMARY.md - Infrastructure details
+  - COMPLETION_SUMMARY.md - Project summary
+- 🔧 **System Verification**: verify_setup.py and verify_setup.bat
+- 🪟 **Batch Utilities**: populate_test_data.bat, start_last_mile_simulator.bat
+
+### Changed
+- 🚦 **Rerouting Logic**: Removed artificial delays, now uses Valhalla API only
+- 📊 **GPS Frequency**: Reduced from 12 pings/minute to 2 pings/minute
+- 🔢 **Speed Units**: Converted from km/h to MPH (US standard)
+- 🏪 **Location Types**: Added type and speed_limit_mph metadata
+- ⏲️ **Service Times**: Now vary by business type (8-30 min vs fixed 8-15 min)
+- 📈 **Database Load**: 83% reduction (720 → 120 GPS points/hour/vehicle)
+
+### Removed
+- ❌ **Residential Routes**: Removed ROUTE-RES-001 and residential locations
+- ❌ **Artificial Traffic**: Removed random 20% traffic delay simulation
+- ❌ **Old Routes**: Deprecated ROUTE-DW-001, ROUTE-NS-001, ROUTE-FULL-001
+
+### Fixed
+- ✅ **Realistic GPS Intervals**: Now matches industry standard (30s)
+- ✅ **Speed Compliance**: Adheres to zone-based speed limits
+- ✅ **Service Time**: Accurate for B2B operations
+- ✅ **ETA Calculations**: More accurate with realistic GPS data
+
+### Performance
+- ⚡ 83% reduction in database writes
+- ⚡ More realistic network usage
+- ⚡ Better system scalability
+
 ## [1.0.0] - 2024
 
 ### Added
