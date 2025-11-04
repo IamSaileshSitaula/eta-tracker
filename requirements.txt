@@ -1,0 +1,19 @@
+# Backend Web Framework
+Flask>=2.0
+Flask-SocketIO>=5.0
+Flask-Cors>=3.0
+
+# Database
+psycopg2-binary>=2.9
+
+# Environment & HTTP
+python-dotenv>=0.19
+requests>=2.25
+
+# GTFS Transit Support
+gtfs-realtime-bindings>=0.0.7
+protobuf>=3.19
+
+# Real-time WebSockets
+eventlet>=0.33
+python-socketio>=5.0
