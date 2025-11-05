@@ -9,8 +9,11 @@ import os
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Tuple
+from pathlib import Path
 
-load_dotenv()
+# Load .env from project root
+env_path = Path(__file__).parent.parent / '.env'
+load_dotenv(dotenv_path=env_path)
 
 
 class Database:

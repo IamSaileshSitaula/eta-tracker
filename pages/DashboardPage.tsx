@@ -1244,6 +1244,223 @@ export const DashboardPage: React.FC = () => {
         }
     }, [plannerPreviewStops, generateTrackingNumber, findRoute]);
 
+    /**
+     * Load synthetic test data for Phase 1 testing
+     * Automatically populates origin, destination, and intermediate stops
+     */
+    const handleLoadTestData = useCallback(() => {
+        // Define test datasets
+        const testRoutes = [
+            {
+                name: "Dallas to Houston (TX)",
+                origin: { streetNumber: "2300", streetName: "Commerce St", unit: "", city: "Dallas", state: "TX", zipCode: "75201" },
+                destination: { streetNumber: "910", streetName: "Louisiana St", unit: "", city: "Houston", state: "TX", zipCode: "77002" },
+                stops: [
+                    { streetNumber: "100", streetName: "W 6th St", unit: "", city: "Austin", state: "TX", zipCode: "78701" }
+                ]
+            },
+            {
+                name: "San Antonio to El Paso (TX)",
+                origin: { streetNumber: "300", streetName: "Alamo Plaza", unit: "", city: "San Antonio", state: "TX", zipCode: "78205" },
+                destination: { streetNumber: "1", streetName: "Civic Center Plaza", unit: "", city: "El Paso", state: "TX", zipCode: "79901" },
+                stops: []
+            },
+            {
+                name: "Austin to Corpus Christi (TX)",
+                origin: { streetNumber: "1100", streetName: "Congress Ave", unit: "", city: "Austin", state: "TX", zipCode: "78701" },
+                destination: { streetNumber: "1201", streetName: "N Shoreline Blvd", unit: "", city: "Corpus Christi", state: "TX", zipCode: "78401" },
+                stops: [
+                    { streetNumber: "123", streetName: "E Main St", unit: "", city: "Seguin", state: "TX", zipCode: "78155" }
+                ]
+            }
+        ];
+
+        // Select a random route
+        const selectedRoute = testRoutes[Math.floor(Math.random() * testRoutes.length)];
+
+        // Clear existing data
+        setPlannerError(null);
+        setCreationError(null);
+        
+        // Set origin
+        setOriginComponents(selectedRoute.origin);
+        const originAddr = buildAddressFromComponents(selectedRoute.origin);
+        setPlannerOriginAddress(originAddr);
+        
+        // Set destination
+        setDestinationComponents(selectedRoute.destination);
+        const destAddr = buildAddressFromComponents(selectedRoute.destination);
+        setPlannerDestinationAddress(destAddr);
+        
+        // Set intermediate stops
+        const stops: IntermediateStop[] = selectedRoute.stops.map((stop, idx) => ({
+            id: `stop-${Date.now()}-${idx}`,
+            address: buildAddressFromComponents(stop),
+            resolved: null,
+            components: stop,
+            useStructured: true
+        }));
+        setPlannerMidStops(stops);
+        
+        // Expand all sections for visibility
+        setIsOriginExpanded(true);
+        setIsDestinationExpanded(true);
+        if (stops.length > 0) {
+            setIsStopsExpanded(true);
+        }
+        
+        // Show success message
+        console.log(`✅ Loaded test route: ${selectedRoute.name}`);
+        setPlannerError(null);
+        
+    }, [buildAddressFromComponents]);
+
+    /**
+     * Load existing shipment from database into the route planner
+     * Allows editing/viewing of existing shipments like PO-98765
+     */
+    const handleLoadExistingShipment = useCallback(async (trackingNumber: string) => {
+        setPlannerError(null);
+        setCreationError(null);
+        setIsLoading(true);
+
+        try {
+            // Fetch shipment by tracking number
+            const shipmentResponse = await fetch(`${API_URL}/v1/shipments?ref=${trackingNumber}`);
+            
+            if (!shipmentResponse.ok) {
+                throw new Error('Failed to fetch shipment');
+            }
+
+            const shipments = await shipmentResponse.json();
+            
+            if (!shipments || shipments.length === 0) {
+                throw new Error(`Tracking number "${trackingNumber}" not found`);
+            }
+
+            const shipment = shipments[0];
+
+            // Fetch detailed status to get all stops
+            const statusResponse = await fetch(`${API_URL}/v1/shipments/${shipment.id}/status`);
+            
+            if (!statusResponse.ok) {
+                throw new Error('Failed to fetch shipment status');
+            }
+
+            const status = await statusResponse.json();
+            const stopsFromDb: Stop[] = status.stops || [];
+
+            if (stopsFromDb.length < 2) {
+                throw new Error('Shipment must have at least origin and destination');
+            }
+
+            // Parse addresses from stop labels
+            const parseAddressComponents = (label: string): AddressComponents => {
+                // Example label: "123 Main St, Austin, TX 78701"
+                const parts = label.split(',').map(p => p.trim());
+                
+                const components: AddressComponents = {
+                    streetNumber: '',
+                    streetName: '',
+                    unit: '',
+                    city: '',
+                    state: '',
+                    zipCode: ''
+                };
+
+                if (parts.length >= 1) {
+                    // Parse street address (first part)
+                    const streetParts = parts[0].split(' ');
+                    if (streetParts.length >= 2) {
+                        components.streetNumber = streetParts[0];
+                        components.streetName = streetParts.slice(1).join(' ');
+                    } else {
+                        components.streetName = parts[0];
+                    }
+                }
+
+                if (parts.length >= 2) {
+                    components.city = parts[1];
+                }
+
+                if (parts.length >= 3) {
+                    // Parse "TX 78701" or just "TX"
+                    const lastPart = parts[2].split(' ');
+                    components.state = lastPart[0];
+                    if (lastPart.length > 1) {
+                        components.zipCode = lastPart[1];
+                    }
+                }
+
+                return components;
+            };
+
+            // Set origin (first stop)
+            const originStop = stopsFromDb[0];
+            const originComps = parseAddressComponents(originStop.name);
+            setOriginComponents(originComps);
+            setPlannerOriginAddress(originStop.name);
+            setPlannerOriginResolved({
+                address: originStop.name,
+                lat: Number(originStop.lat),
+                lon: Number(originStop.lon),
+                label: originStop.name,
+                source: 'manual'
+            });
+
+            // Set destination (last stop)
+            const destStop = stopsFromDb[stopsFromDb.length - 1];
+            const destComps = parseAddressComponents(destStop.name);
+            setDestinationComponents(destComps);
+            setPlannerDestinationAddress(destStop.name);
+            setPlannerDestinationResolved({
+                address: destStop.name,
+                lat: Number(destStop.lat),
+                lon: Number(destStop.lon),
+                label: destStop.name,
+                source: 'manual'
+            });
+
+            // Set intermediate stops (if any)
+            const midStops: IntermediateStop[] = stopsFromDb.slice(1, -1).map((stop, idx) => {
+                const comps = parseAddressComponents(stop.name);
+                return {
+                    id: `loaded-stop-${idx}`,
+                    address: stop.name,
+                    resolved: {
+                        address: stop.name,
+                        lat: Number(stop.lat),
+                        lon: Number(stop.lon),
+                        label: stop.name,
+                        source: 'manual'
+                    },
+                    components: comps,
+                    useStructured: true
+                };
+            });
+            setPlannerMidStops(midStops);
+
+            // Set preview stops
+            setPlannerPreviewStops(stopsFromDb);
+
+            // Expand all sections
+            setIsOriginExpanded(true);
+            setIsDestinationExpanded(true);
+            if (midStops.length > 0) {
+                setIsStopsExpanded(true);
+            }
+
+            console.log(`✅ Loaded shipment: ${trackingNumber} with ${stopsFromDb.length} stops`);
+            setPlannerError(null);
+
+        } catch (err: any) {
+            setPlannerError(err.message || 'Failed to load shipment');
+            console.error('Error loading shipment:', err);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
     // ========================================================================
     // EFFECTS - Socket.io & Real-time Tracking
     // ========================================================================
@@ -1386,6 +1603,36 @@ export const DashboardPage: React.FC = () => {
                                 <span className="text-[10px] uppercase tracking-wider text-gray-500">Control Board</span>
                             </div>
                             <div className="grid grid-cols-1 gap-3">
+                                {/* Load Existing Shipment Section */}
+                                <div className="p-3 bg-gray-900/40 border border-gray-600 rounded-md">
+                                    <p className="text-[10px] uppercase tracking-wider text-gray-400 mb-2">Load Existing</p>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            placeholder="Enter tracking # (e.g., PO-98765)"
+                                            value={trackingInput}
+                                            onChange={(e) => setTrackingInput(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' && trackingInput.trim()) {
+                                                    handleLoadExistingShipment(trackingInput.trim());
+                                                }
+                                            }}
+                                            className="flex-1 bg-gray-900/60 border border-gray-600 rounded-md px-2 py-1.5 text-xs text-gray-100 focus:outline-none focus:border-amber-400"
+                                        />
+                                        <button
+                                            onClick={() => trackingInput.trim() && handleLoadExistingShipment(trackingInput.trim())}
+                                            disabled={!trackingInput.trim() || isLoading}
+                                            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                                                !trackingInput.trim() || isLoading
+                                                    ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                                                    : 'bg-amber-600 hover:bg-amber-500 text-white'
+                                            }`}
+                                        >
+                                            {isLoading ? '...' : 'Load'}
+                                        </button>
+                                    </div>
+                                </div>
+
                                 <div>
                                     <button
                                         type="button"
@@ -1750,6 +1997,34 @@ export const DashboardPage: React.FC = () => {
                                     📍 Enter origin and destination addresses to generate route.
                                 </p>
                             )}
+
+                            {/* Test Data Buttons - Phase 1 Testing */}
+                            <div className="grid grid-cols-2 gap-2">
+                                <button
+                                    onClick={handleLoadTestData}
+                                    disabled={isCreatingShipment || isGeocodingPreview}
+                                    className={`px-4 py-2.5 rounded-md font-semibold text-xs transition-all border-2 ${
+                                        isCreatingShipment || isGeocodingPreview
+                                            ? 'bg-gray-800 text-gray-500 border-gray-700 cursor-not-allowed'
+                                            : 'bg-purple-900/30 text-purple-300 border-purple-500/50 hover:bg-purple-800/40 hover:border-purple-400 hover:shadow-lg hover:shadow-purple-500/30'
+                                    }`}
+                                    title="Load synthetic test data for Phase 1 Valhalla routing validation"
+                                >
+                                    🧪 Test Data
+                                </button>
+                                <button
+                                    onClick={() => handleLoadExistingShipment('PO-98765')}
+                                    disabled={isCreatingShipment || isGeocodingPreview || isLoading}
+                                    className={`px-4 py-2.5 rounded-md font-semibold text-xs transition-all border-2 ${
+                                        isCreatingShipment || isGeocodingPreview || isLoading
+                                            ? 'bg-gray-800 text-gray-500 border-gray-700 cursor-not-allowed'
+                                            : 'bg-amber-900/30 text-amber-300 border-amber-500/50 hover:bg-amber-800/40 hover:border-amber-400 hover:shadow-lg hover:shadow-amber-500/30'
+                                    }`}
+                                    title="Load existing shipment PO-98765 from database"
+                                >
+                                    {isLoading ? '⏳ Loading...' : '📦 Load PO-98765'}
+                                </button>
+                            </div>
 
                             <button
                                 onClick={handleCreateShipment}
