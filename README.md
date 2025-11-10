@@ -2,6 +2,203 @@
 
 > **A production-ready, full-stack shipment tracking system with intelligent route planning, live GPS tracking, and adaptive ETA prediction powered by Valhalla routing engine.**
 
+---
+
+## ⚡ Quick Start - Two Options
+
+### 🚀 Option 1: Start Everything at Once (EASIEST!)
+
+```bash
+# Start all components automatically
+.\start_all.bat
+```
+
+This master script will:
+- ✅ Start PostgreSQL Database
+- ✅ Start Valhalla Routing Engine  
+- ✅ Start Backend API
+- ✅ Start Frontend
+- ✅ Optionally start GPS Simulator with your choice of route
+
+**Each component runs in its own terminal window!**
+
+---
+
+### 🔧 Option 2: Manual Step-by-Step (Advanced)
+
+**Prerequisites**: Docker Desktop (running), Python 3.8+, Node.js 16+
+
+### Step 1: Start Database
+```bash
+# Start PostgreSQL in Docker
+docker compose up -d postgres
+```
+Wait 10 seconds for PostgreSQL with PostGIS to initialize.
+
+### Step 2: Start Valhalla Routing Engine
+```bash
+# Start Valhalla in Docker
+start_valhalla.bat
+```
+**First run**: Downloads Texas OSM data and builds routing tiles (10-15 minutes)  
+**Subsequent runs**: Starts immediately using cached tiles  
+Valhalla provides truck-specific routing with weight/height restrictions.
+
+### Step 3: Start Backend API
+```bash
+# Install Python dependencies (first time only)
+pip install -r requirements.txt
+
+# Start Flask backend
+python backend/app.py
+```
+Backend runs on **http://localhost:5000**  
+Connects to PostgreSQL (port 5432) and Valhalla (port 8002)
+
+### Step 4: Start Frontend
+```bash
+# Install Node dependencies (first time only)
+npm install
+
+# Start React development server
+npm run dev
+```
+Frontend opens at **http://localhost:3000**
+
+### Step 5: Run GPS Simulator (Optional)
+```bash
+# Simulate complete delivery journey
+python unified_gps_simulator.py --route ROUTE-RETAIL-001
+```
+Simulates truck: Dallas → Houston → Beaumont → Last-Mile Deliveries
+
+### 🎉 You're Ready!
+- **Manager Dashboard**: http://localhost:3000 (create/manage shipments)
+- **Customer Tracking**: http://localhost:3000/tracking/PO-98765 (view shipment)
+
+---
+
+## 🔗 How All Components Interact
+
+```
+┌───────────────────────────────────────────────────────────────────────────┐
+│                          SYSTEM ARCHITECTURE                               │
+└───────────────────────────────────────────────────────────────────────────┘
+
+   GPS Simulator              Frontend (React)              Manager/Customer
+   ┌──────────┐              ┌──────────────┐              ┌──────────┐
+   │unified_  │              │ Port 3000    │              │ Browser  │
+   │gps_      │──①─POST─────▶│              │◀────⑥───────│          │
+   │simulator │   GPS Data   │ - Dashboard  │    Visits    │          │
+   └──────────┘              │ - Tracking   │              └──────────┘
+        │                    └──────┬───────┘
+        │                           │
+        │                           │ ② API Calls
+        │                           ▼
+        │                    ┌──────────────┐
+        │                    │ Backend API  │
+        │                    │ Port 5000    │
+        └──────①─POST───────▶│              │
+          /v1/gps            │ Flask + CORS │
+                             └──┬───┬───┬───┘
+                                │   │   │
+                     ┌──────────┘   │   └──────────┐
+                     │              │              │
+                     ▼              ▼              ▼
+              ③ Database      ④ Valhalla    ⑤ Weather API
+              ┌──────────┐   ┌──────────┐   ┌──────────┐
+              │PostgreSQL│   │ Routing  │   │OpenWeather│
+              │+ PostGIS │   │ Engine   │   │   API    │
+              │Port 5432 │   │Port 8002 │   │ (External)│
+              │          │   │          │   │          │
+              │- shipments│  │- Truck   │   │- Temp    │
+              │- routes  │   │  routing │   │- Rain    │
+              │- gps_logs│   │- ETAs    │   │- Wind    │
+              │- stops   │   │- Distance│   │- Traffic │
+              └──────────┘   └──────────┘   └──────────┘
+
+┌───────────────────────────────────────────────────────────────────────────┐
+│                            DATA FLOW DETAILS                               │
+└───────────────────────────────────────────────────────────────────────────┘
+
+① GPS Simulator → Backend:
+   POST /v1/gps {"lat": 32.7767, "lng": -96.7970, "timestamp": "2025-11-10T..."}
+   • Sends GPS position every 5 seconds during simulation
+   • Updates vehicle location in database
+   • Triggers ETA recalculation for active shipments
+
+② Frontend → Backend API Calls:
+   GET  /v1/shipments/{id}           - Fetch shipment details + ETA
+   GET  /v1/stops?shipment_id={id}   - Get all delivery stops with ETAs
+   POST /v1/shipments                - Create new shipment with route
+   GET  /v1/weather/{lat}/{lng}      - Weather at specific location
+   GET  /v1/reroute/{id}             - Calculate alternative routes
+
+③ Backend ↔ PostgreSQL (PostGIS):
+   • Store shipments, routes, GPS logs, stops
+   • Query current vehicle positions (geometry type)
+   • Retrieve delivery schedules with geospatial data
+   • Uses PostGIS for distance calculations and geofencing
+
+④ Backend → Valhalla Routing Engine:
+   POST /route - Calculate truck-optimized routes
+   Request:
+   {
+     "locations": [{"lat": 32.7767, "lon": -96.7970}, ...],
+     "costing": "truck",
+     "costing_options": {
+       "truck": {
+         "weight": 15000,  // kg
+         "height": 3.5,    // meters
+         "use_highways": 1.0
+       }
+     }
+   }
+   Response:
+   {
+     "trip": {
+       "summary": {"length": 440.5, "time": 18300},  // km, seconds
+       "legs": [...],
+       "shape": "polyline_encoded_route"
+     }
+   }
+
+⑤ Backend → Weather API (OpenWeatherMap):
+   GET /weather?lat={lat}&lon={lng}
+   • Fetch real-time weather at truck location
+   • Apply multipliers to ETA:
+     - Rain: +15% delay
+     - Heavy rain: +30% delay
+     - Wind >30mph: +10% delay
+     - Snow/ice: +40% delay
+   • Update confidence scores based on conditions
+
+⑥ User Interaction Flow:
+
+   Manager Dashboard:
+   1. Click "📦 Load PO-98765" → Loads existing shipment data
+   2. Click "🧪 Test Data" → Generates random route in Texas
+   3. Click "Create Shipment" → Calls Valhalla for route optimization
+   4. View live GPS updates on map (via Backend API polling)
+
+   Customer Tracking:
+   1. Visit /tracking/PO-98765 → Frontend fetches shipment
+   2. See truck icon moving on map → GPS updates every 5 sec
+   3. View ETA with confidence score → Backend calculates with weather/traffic
+   4. Receive delay notifications → System detects route deviations
+```
+
+### Component Startup Order
+**IMPORTANT**: Start in this exact order for all features to work:
+
+1. **PostgreSQL** (docker compose) - Database must be ready first
+2. **Valhalla** (start_valhalla.bat) - Routing engine needs OSM tiles loaded
+3. **Backend** (python backend/app.py) - Connects to DB + Valhalla
+4. **Frontend** (npm run dev) - Calls Backend API
+5. **GPS Simulator** (optional) - Simulates vehicle movement
+
+---
+
 ## 🎯 Overview
 
 ETA Tracker is a comprehensive B2B logistics platform that bridges the gap between logistics managers and customers through real-time shipment visibility. The system intelligently combines GPS tracking, weather data, traffic conditions, and routing optimization to provide accurate, confidence-scored ETAs updated every 30 seconds.
