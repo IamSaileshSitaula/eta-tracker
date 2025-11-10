@@ -495,98 +495,121 @@ export const TrackingPage: React.FC = () => {
                 />
             )}
 
-            <div className="h-screen flex">
-                {/* Left Panel - Tracking Details */}
-                <div className="w-[420px] bg-gray-900/60 backdrop-blur-xl border-r border-gray-700/50 flex flex-col shadow-2xl">
-                    {/* Header Section */}
-                    <div className="p-6 border-b border-gray-700/50 bg-gradient-to-br from-gray-800/50 to-gray-900/50">
-                        <div className="flex items-center justify-between mb-3">
-                            <h2 className="text-2xl font-black bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-                                Live Tracking
-                            </h2>
-                            <div className="flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/30 rounded-full">
-                                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                                <span className="text-xs font-semibold text-green-400">LIVE</span>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-2 mb-4">
-                            <span className="text-gray-400 text-sm">Tracking #:</span>
-                            <p className="text-cyan-400 font-mono font-bold text-lg">{activeRoute?.tracking_number}</p>
-                        </div>
-
-                        {/* Status Card */}
-                        {shipmentStatus && (
-                            <div className={`relative p-4 rounded-xl border overflow-hidden ${
-                                shipmentStatus.on_time 
-                                    ? 'bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/30' 
-                                    : 'bg-gradient-to-br from-red-500/10 to-orange-500/10 border-red-500/30'
-                            }`}>
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl"></div>
-                                <div className="relative z-10">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <span className="text-xs uppercase tracking-wider text-gray-300 font-semibold">Delivery Status</span>
-                                        {shipmentStatus.on_time ? (
-                                            <span className="px-2.5 py-1 bg-green-500/20 border border-green-500/40 rounded-full text-xs font-bold text-green-300">
-                                                ✓ ON TIME
-                                            </span>
-                                        ) : (
-                                            <span className="px-2.5 py-1 bg-red-500/20 border border-red-500/40 rounded-full text-xs font-bold text-red-300">
-                                                ⚠ DELAYED {shipmentStatus.late_by_min}m
-                                            </span>
-                                        )}
+            <div className="h-screen flex flex-col">
+                {/* Top Header Bar */}
+                <div className="bg-gray-900/80 backdrop-blur-xl border-b border-gray-700/50 shadow-2xl z-20">
+                    <div className="px-6 py-4">
+                        <div className="flex items-center justify-between">
+                            {/* Left: Logo & Tracking Number */}
+                            <div className="flex items-center gap-4">
+                                <div className="p-2 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-xl border border-cyan-500/30">
+                                    <TruckIcon className="w-8 h-8 text-cyan-400" />
+                                </div>
+                                <div>
+                                    <h1 className="text-2xl font-black bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                                        ETA Tracker
+                                    </h1>
+                                    <div className="flex items-center gap-2 mt-0.5">
+                                        <span className="text-gray-400 text-xs">Tracking:</span>
+                                        <p className="text-cyan-400 font-mono font-bold text-sm">{activeRoute?.tracking_number}</p>
                                     </div>
-                                    <p className="text-white font-semibold text-sm mb-1">{shipmentStatus.current_leg}</p>
-                                    <div className="flex items-center gap-2">
-                                        <div className="flex-1 h-1.5 bg-gray-700/50 rounded-full overflow-hidden">
-                                            <div 
-                                                className="h-full bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full transition-all duration-500"
-                                                style={{ width: `${shipmentStatus.confidence * 100}%` }}
-                                            ></div>
+                                </div>
+                            </div>
+
+                            {/* Center: Status & Progress */}
+                            <div className="flex items-center gap-6">
+                                {shipmentStatus && (
+                                    <>
+                                        {/* Live Indicator */}
+                                        <div className="flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/30 rounded-full">
+                                            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                                            <span className="text-xs font-semibold text-green-400">LIVE TRACKING</span>
                                         </div>
-                                        <span className="text-xs text-gray-400 font-semibold">{Math.round(shipmentStatus.confidence * 100)}%</span>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
 
-                        {/* Route Progress */}
-                        {remainingInfo && remainingInfo.remainingKm !== null && (
-                            <div className="mt-4 p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/30 shadow-lg shadow-blue-500/10">
-                                <div className="flex items-center justify-between mb-3">
-                                    <span className="text-xs uppercase tracking-wider text-blue-200 font-semibold">Route Progress</span>
-                                    <span className="text-2xl font-black text-white">
-                                        {remainingInfo.remainingPercent !== null ? `${100 - remainingInfo.remainingPercent}%` : '—'}
-                                    </span>
-                                </div>
-                                <div className="relative h-2 bg-gray-700/50 rounded-full overflow-hidden mb-2">
-                                    <div 
-                                        className="absolute top-0 left-0 h-full bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 rounded-full transition-all duration-1000"
-                                        style={{ width: `${remainingInfo.remainingPercent !== null ? 100 - remainingInfo.remainingPercent : 0}%` }}
-                                    >
-                                        <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
-                                    </div>
-                                </div>
-                                <p className="text-sm text-blue-200/80">
-                                    {remainingInfo.remainingKm !== null ? `${remainingInfo.remainingKm.toFixed(1)} km remaining` : 'Calculating distance…'}
-                                </p>
-                            </div>
-                        )}
+                                        {/* Status Badge */}
+                                        {shipmentStatus.on_time ? (
+                                            <div className="flex items-center gap-2 px-4 py-2 bg-green-500/20 border border-green-500/40 rounded-full">
+                                                <svg className="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                                                </svg>
+                                                <span className="text-xs font-bold text-green-300">ON TIME</span>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-2 px-4 py-2 bg-red-500/20 border border-red-500/40 rounded-full">
+                                                <svg className="w-4 h-4 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"/>
+                                                </svg>
+                                                <span className="text-xs font-bold text-red-300">DELAYED {shipmentStatus.late_by_min}m</span>
+                                            </div>
+                                        )}
 
-                        {/* Traffic Alerts */}
+                                        {/* Progress */}
+                                        {remainingInfo && remainingInfo.remainingPercent !== null && (
+                                            <div className="flex items-center gap-3 px-4 py-2 bg-blue-500/10 border border-blue-500/30 rounded-full">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-24 h-1.5 bg-gray-700/50 rounded-full overflow-hidden">
+                                                        <div 
+                                                            className="h-full bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full transition-all duration-1000"
+                                                            style={{ width: `${100 - remainingInfo.remainingPercent}%` }}
+                                                        ></div>
+                                                    </div>
+                                                    <span className="text-xs font-bold text-blue-300">{100 - remainingInfo.remainingPercent}%</span>
+                                                </div>
+                                                <span className="text-xs text-gray-400">
+                                                    {remainingInfo.remainingKm?.toFixed(0)} km left
+                                                </span>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+
+                            {/* Right: Current Leg Info */}
+                            {shipmentStatus && (
+                                <div className="text-right max-w-xs">
+                                    <p className="text-xs text-gray-400 uppercase tracking-wider">Current Leg</p>
+                                    <p className="text-white font-semibold text-sm truncate">{shipmentStatus.current_leg}</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Main Content Area */}
+                <div className="flex-1 relative flex">
+                    {/* Map - Takes full space */}
+                    <div className="flex-1 relative">
+                        {activeRoute && stops.length > 0 && (
+                            <MapComponent
+                                stops={stops}
+                                vehiclePosition={vehiclePosition}
+                                mode={Mode.Logistics}
+                                shipmentId={shipmentId || undefined}
+                                onRemainingChange={setRemainingInfo}
+                                onTrafficUpdate={setTrafficSegments}
+                            />
+                        )}
+                    </div>
+
+                    {/* Right Side Panel - Floating Card */}
+                    <div className="absolute top-4 right-4 w-96 max-h-[calc(100vh-180px)] bg-gray-900/95 backdrop-blur-xl border border-gray-700/50 rounded-2xl shadow-2xl overflow-hidden z-10">
+                        {/* Traffic Alerts - Top Priority */}
                         {orderedTrafficSegments.length > 0 && (
-                            <div className="mt-4">
+                            <div className="p-4 border-b border-gray-700/50 bg-red-500/5">
                                 <div className="flex items-center gap-2 mb-3">
-                                    <svg className="w-4 h-4 text-orange-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <svg className="w-5 h-5 text-orange-400" fill="currentColor" viewBox="0 0 20 20">
                                         <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd"/>
                                     </svg>
-                                    <span className="text-sm uppercase tracking-wider text-orange-300 font-semibold">Traffic Alerts</span>
+                                    <span className="text-sm font-bold text-orange-300 uppercase tracking-wide">Traffic Alerts</span>
+                                    <span className="ml-auto px-2 py-0.5 bg-orange-500/20 text-orange-300 text-xs font-bold rounded-full">
+                                        {orderedTrafficSegments.length}
+                                    </span>
                                 </div>
-                                <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
-                                    {orderedTrafficSegments.map((segment, index) => {
+                                <div className="space-y-2 max-h-32 overflow-y-auto custom-scrollbar">
+                                    {orderedTrafficSegments.slice(0, 3).map((segment, index) => {
                                         const severity = segment.traffic_level?.toLowerCase?.() ?? 'traffic';
                                         const severityLabel = severity.replace(/\b\w/g, (char) => char.toUpperCase());
                                         const nearestStopName = findNearestStopName(segment);
-                                        const speedFactorPercent = segment.speed_factor != null ? Math.round(segment.speed_factor * 100) : null;
 
                                         const iconBySeverity: Record<string, string> = {
                                             severe: '🚨',
@@ -599,18 +622,15 @@ export const TrackingPage: React.FC = () => {
 
                                         return (
                                             <div
-                                                key={`${segment.start.lat}-${segment.start.lon}-${segment.end.lat}-${segment.end.lon}-${index}`}
-                                                className="p-3 rounded-lg bg-gray-800/50 border border-gray-700/50 hover:bg-gray-800/70 transition-all"
+                                                key={`${segment.start.lat}-${segment.start.lon}-${index}`}
+                                                className="p-2 rounded-lg bg-gray-800/50 border border-gray-700/50"
                                             >
-                                                <div className="flex items-start gap-2">
-                                                    <span className="text-lg">{iconBySeverity[severity] ?? '🔵'}</span>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-base">{iconBySeverity[severity] ?? '🔵'}</span>
                                                     <div className="flex-1 min-w-0">
-                                                        <p className="font-semibold text-white text-sm">{severityLabel} Traffic</p>
+                                                        <p className="font-semibold text-white text-xs">{severityLabel}</p>
                                                         <p className="text-gray-400 text-xs truncate">
                                                             {nearestStopName ? `Near ${nearestStopName}` : 'On route'}
-                                                        </p>
-                                                        <p className="text-gray-500 text-xs mt-0.5">
-                                                            Flow: {speedFactorPercent !== null ? `${speedFactorPercent}%` : '—'}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -620,51 +640,39 @@ export const TrackingPage: React.FC = () => {
                                 </div>
                             </div>
                         )}
-                    </div>
-                    
-                    {/* Stops List */}
-                    <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-                        <h3 className="text-sm uppercase tracking-wider text-gray-400 font-semibold mb-4 flex items-center gap-2">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                            </svg>
-                            Delivery Stops ({stops.length})
-                        </h3>
-                        {isLoading ? (
-                            <div className="flex flex-col items-center justify-center h-64 gap-4">
-                                <svg className="animate-spin h-12 w-12 text-cyan-500" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                <p className="text-gray-400 font-semibold">Loading route details...</p>
-                            </div>
-                        ) : error ? (
-                            <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
-                                <p className="text-red-300 text-center font-semibold">⚠️ {error}</p>
-                            </div>
-                        ) : stops.length > 0 ? (
-                            <StopList stops={stops} currentStopSeq={currentStopSeq} />
-                        ) : (
-                            <div className="text-gray-400 text-center p-8">
-                                <p>No delivery stops found</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
 
-                {/* Right Panel - Map */}
-                <div className="flex-1 relative">
-                    {activeRoute && stops.length > 0 && (
-                        <MapComponent
-                            stops={stops}
-                            vehiclePosition={vehiclePosition}
-                            mode={Mode.Logistics}
-                            shipmentId={shipmentId || undefined}
-                            onRemainingChange={setRemainingInfo}
-                            onTrafficUpdate={setTrafficSegments}
-                        />
-                    )}
+                        {/* Stops List */}
+                        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                            <div className="flex items-center gap-2 mb-4">
+                                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                                <h3 className="text-xs uppercase tracking-wider text-gray-400 font-bold">
+                                    Stops ({stops.length})
+                                </h3>
+                            </div>
+                            {isLoading ? (
+                                <div className="flex flex-col items-center justify-center py-12 gap-3">
+                                    <svg className="animate-spin h-10 w-10 text-cyan-500" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <p className="text-gray-400 text-sm font-semibold">Loading...</p>
+                                </div>
+                            ) : error ? (
+                                <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
+                                    <p className="text-red-300 text-center text-sm font-semibold">⚠️ {error}</p>
+                                </div>
+                            ) : stops.length > 0 ? (
+                                <StopList stops={stops} currentStopSeq={currentStopSeq} />
+                            ) : (
+                                <div className="text-gray-400 text-center py-8 text-sm">
+                                    <p>No delivery stops found</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </div>
             
