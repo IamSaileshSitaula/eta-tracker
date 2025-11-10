@@ -1582,7 +1582,7 @@ export const DashboardPage: React.FC = () => {
     // ========================================================================
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-800 to-gray-900 text-white">
+        <div className="min-h-screen bg-gray-50 text-gray-900">
             <div className="h-screen flex">
                 {/* ============================================================
                     LEFT PANEL - Manager Controls
